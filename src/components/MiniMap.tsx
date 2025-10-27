@@ -1,19 +1,23 @@
-import { Player, Enemy, worldMap, MAP_SIZE, CELL_SIZE } from './GameEngine';
+import { Player, Enemy } from '@/types/game';
+import { CELL_SIZE } from '@/lib/raycaster';
 
 interface MiniMapProps {
   player: Player;
   enemies: Enemy[];
+  worldMap: number[][];
 }
 
-export const MiniMap = ({ player, enemies }: MiniMapProps) => {
-  const miniMapSize = 150;
-  const cellSize = miniMapSize / MAP_SIZE;
+export const MiniMap = ({ player, enemies, worldMap }: MiniMapProps) => {
+  const mapHeight = worldMap.length;
+  const mapWidth = worldMap[0]?.length || 0;
+  const miniMapSize = 180;
+  const cellSize = miniMapSize / Math.max(mapHeight, mapWidth);
 
   return (
     <div className="absolute bottom-4 left-4 pointer-events-none">
       <svg
-        width={miniMapSize}
-        height={miniMapSize}
+        width={mapWidth * cellSize}
+        height={mapHeight * cellSize}
         className="border-2 border-[#8B0000] bg-black/80 rounded"
       >
         {worldMap.map((row, y) =>
