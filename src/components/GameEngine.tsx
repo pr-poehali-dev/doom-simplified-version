@@ -85,10 +85,10 @@ export const updateGameLogic = (
   let moveY = 0;
   let moving = false;
 
-  const forward = keysPressed.current.has('w');
-  const backward = keysPressed.current.has('s');
-  const left = keysPressed.current.has('a');
-  const right = keysPressed.current.has('d');
+  const forward = keysPressed.current.has('w') || keysPressed.current.has('arrowup');
+  const backward = keysPressed.current.has('s') || keysPressed.current.has('arrowdown');
+  const left = keysPressed.current.has('a') || keysPressed.current.has('arrowleft');
+  const right = keysPressed.current.has('d') || keysPressed.current.has('arrowright');
 
   if (forward && !backward) {
     moveX += Math.cos(player.angle);

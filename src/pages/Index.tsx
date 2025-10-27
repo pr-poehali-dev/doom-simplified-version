@@ -90,7 +90,7 @@ const Index = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
-      if (['w', 'a', 's', 'd'].includes(key)) {
+      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
         keysPressed.current.add(key);
       }
       if (key === 'escape') {
