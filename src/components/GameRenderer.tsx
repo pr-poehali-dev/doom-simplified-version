@@ -1,5 +1,6 @@
 import { MutableRefObject } from 'react';
 import { Player, Enemy, NUM_RAYS, FOV, MAX_DEPTH, CELL_SIZE, castRay } from './GameEngine';
+import { Powerup, renderPowerup } from './Powerups';
 
 export const drawWeapon = (
   ctx: CanvasRenderingContext2D,
@@ -62,6 +63,7 @@ export const renderGame = (
   canvas: HTMLCanvasElement | null,
   playerRef: MutableRefObject<Player>,
   enemies: Enemy[],
+  powerups: Powerup[],
   shooting: boolean,
   weaponRecoil: number,
   walkCycle: number
@@ -101,6 +103,21 @@ export const renderGame = (
       );
     }
   }
+
+  powerups.forEach((powerup) => {
+    renderPowerup(
+      ctx,
+      powerup,
+      playerRef.current.x,
+      playerRef.current.y,
+      playerRef.current.angle,
+      width,
+      height,
+      FOV,
+      MAX_DEPTH,
+      CELL_SIZE
+    );
+  });
 
   enemies.forEach((enemy) => {
     if (!enemy.active) return;

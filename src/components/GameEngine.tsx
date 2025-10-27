@@ -6,6 +6,10 @@ export interface Player {
   angle: number;
   health: number;
   ammo: number;
+  maxHealth: number;
+  maxAmmo: number;
+  kills: number;
+  armor: number;
 }
 
 export interface Enemy {
@@ -13,23 +17,26 @@ export interface Enemy {
   y: number;
   health: number;
   active: boolean;
+  lastAttackTime: number;
 }
 
-export const MAP_SIZE = 8;
+export const MAP_SIZE = 10;
 export const CELL_SIZE = 64;
 export const FOV = Math.PI / 3;
 export const MAX_DEPTH = 10;
 export const NUM_RAYS = 120;
 
 export const worldMap = [
-  [1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 1, 0, 0, 1, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 1, 0, 0, 1, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 1, 1, 0, 0, 1, 1, 0, 1],
+  [1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 0, 0, 0, 1, 1, 0, 0, 0, 1],
+  [1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+  [1, 0, 1, 1, 0, 0, 1, 1, 0, 1],
+  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ];
 
 export const castRay = (
@@ -138,13 +145,18 @@ export const updateGameLogic = (
     const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (distance < CELL_SIZE * 0.5) {
-      setPlayer((prev) => {
-        const newHealth = prev.health - 5;
-        if (newHealth <= 0) {
-          setGameOver(true);
-        }
-        return { ...prev, health: Math.max(0, newHealth) };
-      });
+      const now = Date.now();
+      if (now - enemy.lastAttackTime > 1000) {
+        enemy.lastAttackTime = now;
+        setPlayer((prev) => {
+          const damage = Math.max(1, 10 - prev.armor);
+          const newHealth = prev.health - damage;
+          if (newHealth <= 0) {
+            setGameOver(true);
+          }
+          return { ...prev, health: Math.max(0, newHealth) };
+        });
+      }
     }
 
     if (distance > CELL_SIZE) {

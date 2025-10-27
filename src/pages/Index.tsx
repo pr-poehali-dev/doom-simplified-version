@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Player, Enemy, CELL_SIZE, updateGameLogic, handleShoot } from '@/components/GameEngine';
+import { Powerup, checkPowerupCollision } from '@/components/Powerups';
 import { renderGame } from '@/components/GameRenderer';
 import { GameHUD } from '@/components/GameHUD';
 import { GameMenus } from '@/components/GameMenus';
+import { MiniMap } from '@/components/MiniMap';
 
 const Index = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -13,11 +15,23 @@ const Index = () => {
     angle: 0,
     health: 100,
     ammo: 50,
+    maxHealth: 100,
+    maxAmmo: 100,
+    kills: 0,
+    armor: 0,
   });
   const [enemies, setEnemies] = useState<Enemy[]>([
-    { x: 4.5 * CELL_SIZE, y: 2.5 * CELL_SIZE, health: 100, active: true },
-    { x: 5.5 * CELL_SIZE, y: 5.5 * CELL_SIZE, health: 100, active: true },
-    { x: 2.5 * CELL_SIZE, y: 5.5 * CELL_SIZE, health: 100, active: true },
+    { x: 4.5 * CELL_SIZE, y: 2.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+    { x: 5.5 * CELL_SIZE, y: 5.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+    { x: 2.5 * CELL_SIZE, y: 5.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+    { x: 7.5 * CELL_SIZE, y: 3.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+    { x: 3.5 * CELL_SIZE, y: 7.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+  ]);
+  const [powerups, setPowerups] = useState<Powerup[]>([
+    { x: 3.5 * CELL_SIZE, y: 3.5 * CELL_SIZE, type: 'health', active: true, rotation: 0 },
+    { x: 6.5 * CELL_SIZE, y: 6.5 * CELL_SIZE, type: 'ammo', active: true, rotation: 0 },
+    { x: 2.5 * CELL_SIZE, y: 7.5 * CELL_SIZE, type: 'armor', active: true, rotation: 0 },
+    { x: 7.5 * CELL_SIZE, y: 2.5 * CELL_SIZE, type: 'health', active: true, rotation: 0 },
   ]);
   const [score, setScore] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -32,6 +46,13 @@ const Index = () => {
   useEffect(() => {
     playerRef.current = player;
   }, [player]);
+
+  useEffect(() => {
+    const activeEnemies = enemies.filter((e) => e.active).length;
+    const initialEnemies = 5;
+    const kills = initialEnemies - activeEnemies;
+    setPlayer((prev) => ({ ...prev, kills }));
+  }, [enemies]);
 
   const shoot = () => {
     handleShoot(
@@ -57,6 +78,12 @@ const Index = () => {
       setPlayer,
       setWalkCycle,
       setGameOver
+    );
+
+    checkPowerupCollision(player, powerups, setPowerups, setPlayer);
+
+    setPowerups((prev) =>
+      prev.map((p) => ({ ...p, rotation: p.rotation + 0.05 }))
     );
   };
 
@@ -130,7 +157,7 @@ const Index = () => {
 
       if (deltaTime >= frameTime) {
         updateGame();
-        renderGame(canvasRef.current, playerRef, enemies, shooting, weaponRecoil, walkCycle);
+        renderGame(canvasRef.current, playerRef, enemies, powerups, shooting, weaponRecoil, walkCycle);
         lastTime = currentTime - (deltaTime % frameTime);
       }
 
@@ -140,7 +167,7 @@ const Index = () => {
     animationFrameId = requestAnimationFrame(gameLoop);
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [player, enemies, paused, gameOver, shooting, weaponRecoil, walkCycle]);
+  }, [player, enemies, powerups, paused, gameOver, shooting, weaponRecoil, walkCycle]);
 
   const restart = () => {
     setPlayer({
@@ -149,11 +176,23 @@ const Index = () => {
       angle: 0,
       health: 100,
       ammo: 50,
+      maxHealth: 100,
+      maxAmmo: 100,
+      kills: 0,
+      armor: 0,
     });
     setEnemies([
-      { x: 4.5 * CELL_SIZE, y: 2.5 * CELL_SIZE, health: 100, active: true },
-      { x: 5.5 * CELL_SIZE, y: 5.5 * CELL_SIZE, health: 100, active: true },
-      { x: 2.5 * CELL_SIZE, y: 5.5 * CELL_SIZE, health: 100, active: true },
+      { x: 4.5 * CELL_SIZE, y: 2.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+      { x: 5.5 * CELL_SIZE, y: 5.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+      { x: 2.5 * CELL_SIZE, y: 5.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+      { x: 7.5 * CELL_SIZE, y: 3.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+      { x: 3.5 * CELL_SIZE, y: 7.5 * CELL_SIZE, health: 100, active: true, lastAttackTime: 0 },
+    ]);
+    setPowerups([
+      { x: 3.5 * CELL_SIZE, y: 3.5 * CELL_SIZE, type: 'health', active: true, rotation: 0 },
+      { x: 6.5 * CELL_SIZE, y: 6.5 * CELL_SIZE, type: 'ammo', active: true, rotation: 0 },
+      { x: 2.5 * CELL_SIZE, y: 7.5 * CELL_SIZE, type: 'armor', active: true, rotation: 0 },
+      { x: 7.5 * CELL_SIZE, y: 2.5 * CELL_SIZE, type: 'health', active: true, rotation: 0 },
     ]);
     setScore(0);
     setGameOver(false);
@@ -171,7 +210,17 @@ const Index = () => {
           style={{ imageRendering: 'pixelated' }}
         />
 
-        <GameHUD health={player.health} ammo={player.ammo} score={score} />
+        <GameHUD 
+          health={player.health} 
+          maxHealth={player.maxHealth}
+          ammo={player.ammo} 
+          maxAmmo={player.maxAmmo}
+          score={score} 
+          kills={player.kills}
+          armor={player.armor}
+        />
+
+        <MiniMap player={player} enemies={enemies} />
 
         <GameMenus
           pointerLocked={pointerLocked}
