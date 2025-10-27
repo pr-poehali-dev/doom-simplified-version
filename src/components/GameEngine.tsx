@@ -39,9 +39,10 @@ export const castRay = (
   const rayDirX = Math.cos(angle);
   const rayDirY = Math.sin(angle);
   let distance = 0;
+  const stepSize = 4;
 
   while (distance < MAX_DEPTH * CELL_SIZE) {
-    distance += 1;
+    distance += stepSize;
     const testX = playerRef.current.x + rayDirX * distance;
     const testY = playerRef.current.y + rayDirY * distance;
     const mapX = Math.floor(testX / CELL_SIZE);
@@ -71,47 +72,62 @@ export const updateGameLogic = (
 ) => {
   if (paused || gameOver) return;
 
-  const moveSpeed = 3;
-  let newX = player.x;
-  let newY = player.y;
+  const moveSpeed = 3.5;
+  const diagonalSpeed = moveSpeed * 0.707;
+  let moveX = 0;
+  let moveY = 0;
   let moving = false;
 
-  if (keysPressed.current.has('w')) {
-    newX += Math.cos(player.angle) * moveSpeed;
-    newY += Math.sin(player.angle) * moveSpeed;
+  const forward = keysPressed.current.has('w');
+  const backward = keysPressed.current.has('s');
+  const left = keysPressed.current.has('a');
+  const right = keysPressed.current.has('d');
+
+  if (forward && !backward) {
+    moveX += Math.cos(player.angle);
+    moveY += Math.sin(player.angle);
     moving = true;
   }
-  if (keysPressed.current.has('s')) {
-    newX -= Math.cos(player.angle) * moveSpeed;
-    newY -= Math.sin(player.angle) * moveSpeed;
+  if (backward && !forward) {
+    moveX -= Math.cos(player.angle);
+    moveY -= Math.sin(player.angle);
     moving = true;
   }
-  if (keysPressed.current.has('a')) {
-    newX += Math.cos(player.angle - Math.PI / 2) * moveSpeed;
-    newY += Math.sin(player.angle - Math.PI / 2) * moveSpeed;
+  if (left && !right) {
+    moveX += Math.cos(player.angle - Math.PI / 2);
+    moveY += Math.sin(player.angle - Math.PI / 2);
     moving = true;
   }
-  if (keysPressed.current.has('d')) {
-    newX += Math.cos(player.angle + Math.PI / 2) * moveSpeed;
-    newY += Math.sin(player.angle + Math.PI / 2) * moveSpeed;
+  if (right && !left) {
+    moveX += Math.cos(player.angle + Math.PI / 2);
+    moveY += Math.sin(player.angle + Math.PI / 2);
     moving = true;
   }
 
   if (moving) {
-    setWalkCycle((prev) => prev + 0.2);
-  }
+    const speed = (forward || backward) && (left || right) ? diagonalSpeed : moveSpeed;
+    const length = Math.sqrt(moveX * moveX + moveY * moveY);
+    if (length > 0) {
+      moveX = (moveX / length) * speed;
+      moveY = (moveY / length) * speed;
+    }
 
-  const mapX = Math.floor(newX / CELL_SIZE);
-  const mapY = Math.floor(newY / CELL_SIZE);
+    const newX = player.x + moveX;
+    const newY = player.y + moveY;
+    const mapX = Math.floor(newX / CELL_SIZE);
+    const mapY = Math.floor(newY / CELL_SIZE);
 
-  if (
-    mapX >= 0 &&
-    mapX < MAP_SIZE &&
-    mapY >= 0 &&
-    mapY < MAP_SIZE &&
-    worldMap[mapY][mapX] === 0
-  ) {
-    setPlayer((prev) => ({ ...prev, x: newX, y: newY }));
+    if (
+      mapX >= 0 &&
+      mapX < MAP_SIZE &&
+      mapY >= 0 &&
+      mapY < MAP_SIZE &&
+      worldMap[mapY][mapX] === 0
+    ) {
+      setPlayer((prev) => ({ ...prev, x: newX, y: newY }));
+    }
+    
+    setWalkCycle((prev) => prev + 0.25);
   }
 
   enemies.forEach((enemy) => {

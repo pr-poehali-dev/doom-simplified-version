@@ -91,7 +91,7 @@ const Index = () => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!pointerLocked || paused || gameOver) return;
       
-      const sensitivity = 0.002;
+      const sensitivity = 0.003;
       const angleChange = e.movementX * sensitivity;
       
       setPlayer((prev) => ({
@@ -120,12 +120,26 @@ const Index = () => {
   }, [player.ammo, paused, gameOver, enemies, pointerLocked]);
 
   useEffect(() => {
-    const gameLoop = setInterval(() => {
-      updateGame();
-      renderGame(canvasRef.current, playerRef, enemies, shooting, weaponRecoil, walkCycle);
-    }, 1000 / 60);
+    let animationFrameId: number;
+    let lastTime = performance.now();
+    const targetFPS = 60;
+    const frameTime = 1000 / targetFPS;
 
-    return () => clearInterval(gameLoop);
+    const gameLoop = (currentTime: number) => {
+      const deltaTime = currentTime - lastTime;
+
+      if (deltaTime >= frameTime) {
+        updateGame();
+        renderGame(canvasRef.current, playerRef, enemies, shooting, weaponRecoil, walkCycle);
+        lastTime = currentTime - (deltaTime % frameTime);
+      }
+
+      animationFrameId = requestAnimationFrame(gameLoop);
+    };
+
+    animationFrameId = requestAnimationFrame(gameLoop);
+
+    return () => cancelAnimationFrame(animationFrameId);
   }, [player, enemies, paused, gameOver, shooting, weaponRecoil, walkCycle]);
 
   const restart = () => {

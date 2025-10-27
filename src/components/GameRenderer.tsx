@@ -45,6 +45,19 @@ export const drawWeapon = (
   ctx.strokeRect(weaponX - weaponWidth / 2, weaponY, weaponWidth, weaponHeight);
 };
 
+const wallColorCache = new Map<number, string>();
+
+const getWallColor = (brightness: number): string => {
+  const key = Math.floor(brightness * 100);
+  if (wallColorCache.has(key)) {
+    return wallColorCache.get(key)!;
+  }
+  const gray = Math.floor(brightness * 100 + 50);
+  const color = `rgb(${gray}, ${Math.floor(gray * 0.7)}, ${Math.floor(gray * 0.5)})`;
+  wallColorCache.set(key, color);
+  return color;
+};
+
 export const renderGame = (
   canvas: HTMLCanvasElement | null,
   playerRef: MutableRefObject<Player>,
@@ -67,21 +80,23 @@ export const renderGame = (
   ctx.fillStyle = '#2d1810';
   ctx.fillRect(0, height / 2, width, height / 2);
 
+  const playerAngle = playerRef.current.angle;
+  const rayWidth = width / NUM_RAYS;
+
   for (let ray = 0; ray < NUM_RAYS; ray++) {
-    const rayAngle = playerRef.current.angle - FOV / 2 + (ray / NUM_RAYS) * FOV;
+    const rayAngle = playerAngle - FOV / 2 + (ray / NUM_RAYS) * FOV;
     const { distance, hitWall } = castRay(playerRef, rayAngle);
 
     if (hitWall) {
-      const perpDistance = distance * Math.cos(rayAngle - playerRef.current.angle);
+      const perpDistance = distance * Math.cos(rayAngle - playerAngle);
       const wallHeight = (CELL_SIZE / perpDistance) * 277;
       const brightness = Math.max(0, 1 - perpDistance / (MAX_DEPTH * CELL_SIZE));
-      const gray = Math.floor(brightness * 100 + 50);
       
-      ctx.fillStyle = `rgb(${gray}, ${gray * 0.7}, ${gray * 0.5})`;
+      ctx.fillStyle = getWallColor(brightness);
       ctx.fillRect(
-        (ray / NUM_RAYS) * width,
+        ray * rayWidth,
         (height - wallHeight) / 2,
-        width / NUM_RAYS + 1,
+        rayWidth + 1,
         wallHeight
       );
     }
